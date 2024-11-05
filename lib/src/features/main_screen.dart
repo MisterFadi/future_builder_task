@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
-
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -11,8 +10,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    // TODO: initiate controllers
   }
+
+  final TextEditingController _controller = TextEditingController();
+  Future<String>? _getCityFromZip;
 
   @override
   Widget build(BuildContext context) {
@@ -21,21 +22,38 @@ class _MainScreenState extends State<MainScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
                     border: OutlineInputBorder(), labelText: "Postleitzahl"),
               ),
               const SizedBox(height: 32),
               OutlinedButton(
                 onPressed: () {
-                  // TODO: implementiere Suche
+                  setState(() {
+                    _getCityFromZip = getCityFromZip(_controller.text);
+                  });
                 },
                 child: const Text("Suche"),
               ),
               const SizedBox(height: 32),
-              Text("Ergebnis: Noch keine PLZ gesucht",
-                  style: Theme.of(context).textTheme.labelLarge),
+              FutureBuilder(
+                  future: _getCityFromZip,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return const Text("Fehler beim Laden der Stadt");
+                    } else if (snapshot.hasData) {
+                      return Text(
+                        "Ergebnis: ${snapshot.data}",
+                      );
+                    } else {
+                      return const Text("Noch keine PLZ gesucht");
+                    }
+                  }),
             ],
           ),
         ),
@@ -45,15 +63,17 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
-    // TODO: dispose controllers
+    _controller.dispose();
     super.dispose();
   }
 
   Future<String> getCityFromZip(String zip) async {
     // simuliere Dauer der Datenbank-Anfrage
     await Future.delayed(const Duration(seconds: 3));
-
     switch (zip) {
+      case "39108":
+      case "39104":
+        return "Magdeburg";
       case "10115":
         return 'Berlin';
       case "20095":
